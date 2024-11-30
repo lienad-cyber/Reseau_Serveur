@@ -1,0 +1,132 @@
+Votre code actuel pour le serveur web est fonctionnel, mais il y a plusieurs améliorations possibles pour en faire un serveur plus robuste et performant, semblable à un serveur comme Apache. Voici quelques suggestions :
+
+---
+
+### **1. Gestion des exceptions**
+- **Problème** : Vous ne gérez pas les exceptions dans le `catch` block. Les erreurs peuvent passer inaperçues.
+- **Solution** : Ajoutez un message d’erreur ou une action dans le `catch`.
+
+```java
+} catch (Exception e) {
+    e.printStackTrace(); // Afficher l'erreur pour le débogage
+}
+```
+
+---
+
+### **2. Chemins sécurisés**
+- **Problème** : Les utilisateurs peuvent potentiellement accéder à des fichiers en dehors de `htdocs` en manipulant l’URL (par exemple, `../../../etc/passwd`).
+- **Solution** : Normalisez et sécurisez les chemins en vérifiant qu’ils sont contenus dans `htdocs`.
+
+```java
+File file = new File("../../htdocs/" + currrentPath).getCanonicalFile();
+File baseDir = new File("../../htdocs/").getCanonicalFile();
+
+if (!file.getPath().startsWith(baseDir.getPath())) {
+    DifferentHttpError.Error403(writer); // Erreur 403 : Accès interdit
+    return;
+}
+```
+
+---
+
+### **3. Multithreading**
+- **Problème** : Votre serveur est monothreadé, ce qui signifie qu’il ne peut gérer qu’une requête à la fois.
+- **Solution** : Utilisez des threads ou un pool de threads pour gérer plusieurs connexions simultanément.
+
+```java
+ServerSocket serverSocket = new ServerSocket(8000);
+
+while (true) {
+    Socket clientSocket = serverSocket.accept();
+    new Thread(() -> {
+        try {
+            MyFileHandler(clientSocket);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }).start();
+}
+```
+
+---
+
+### **4. Headers HTTP complets**
+- **Problème** : Vos réponses HTTP sont incomplètes (par exemple, pas de `Date` ni de `Server`).
+- **Solution** : Ajoutez des en-têtes supplémentaires comme la date et le serveur.
+
+```java
+writer.writeBytes("HTTP/1.1 200 OK\r\n");
+writer.writeBytes("Date: " + new java.util.Date() + "\r\n");
+writer.writeBytes("Server: MySimpleJavaServer/1.0\r\n");
+writer.writeBytes("Content-Type: " + contentType + "\r\n");
+writer.writeBytes("Content-Length: " + fileBytes.length + "\r\n");
+writer.writeBytes("\r\n");
+```
+
+---
+
+### **5. Compression des réponses**
+- **Problème** : Les fichiers volumineux (HTML, CSS, JS) ne sont pas compressés.
+- **Solution** : Implémentez la compression GZIP si le client le supporte (vérifiez l’en-tête `Accept-Encoding`).
+
+---
+
+### **6. Gestion des méthodes HTTP**
+- **Problème** : Votre serveur gère uniquement `GET`. Les méthodes `POST`, `PUT`, `DELETE`, etc., ne sont pas prises en charge.
+- **Solution** : Ajoutez une logique pour gérer d’autres méthodes HTTP.
+
+```java
+String method = requestParts[0];
+if ("POST".equalsIgnoreCase(method)) {
+    handlePostRequest(bufferedReader, writer);
+} else if ("PUT".equalsIgnoreCase(method)) {
+    handlePutRequest(bufferedReader, writer);
+} else {
+    DifferentHttpError.Error405(writer); // Méthode non autorisée
+}
+```
+
+---
+
+### **7. Support des MIME types étendus**
+- **Problème** : Votre fonction `getContentType` ne couvre pas tous les types MIME.
+- **Solution** : Utilisez une bibliothèque ou chargez un fichier de configuration pour définir les types MIME.
+
+---
+
+### **8. Logs HTTP**
+- **Problème** : Vous imprimez des informations sur la console, mais un vrai serveur doit enregistrer les requêtes.
+- **Solution** : Implémentez un système de journalisation (log).
+
+```java
+private void logRequest(String method, String requestedFile, int responseCode) {
+    System.out.printf("[%s] %s %s -> %d\n", new java.util.Date(), method, requestedFile, responseCode);
+}
+```
+
+---
+
+### **9. Gestion des sessions**
+- Implémentez une gestion des cookies pour identifier les utilisateurs ou maintenir une session.
+
+---
+
+### **10. Implémentation d’un cache**
+- **Problème** : Vous servez toujours les fichiers directement depuis le disque.
+- **Solution** : Utilisez un cache pour éviter de recharger fréquemment les fichiers immuables (comme CSS, JS).
+
+---
+
+### **11. Gestion des erreurs améliorée**
+- Implémentez des pages d’erreur personnalisées pour `403`, `404`, `500`, etc.
+
+---
+
+### **12. Améliorations générales**
+- **Support HTTPS** : Utilisez `SSLServerSocket` pour activer HTTPS.
+- **Serveur modulaire** : Organisez le code en classes pour les fonctionnalités spécifiques (par exemple, gestionnaire de fichiers, gestionnaire de requêtes HTTP).
+
+---
+
+Avec ces améliorations, votre serveur se rapprochera davantage d’un serveur web complet comme Apache.

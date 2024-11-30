@@ -58,7 +58,7 @@ public class SocketServer {
 
             if (exitcode == 0) {
                 try (InputStream inputStream = process.getInputStream();) {
-                    byte [] fileByte = inputStream.readAllBytes();
+                    byte[] fileByte = inputStream.readAllBytes();
 
                     write.writeBytes("HTTP/1.1 200 OK \r\n");
                     write.writeBytes("Content-Type : text/html \r\n");
@@ -71,6 +71,8 @@ public class SocketServer {
             } else {
                 DifferentHttpError.Error500(write);
             }
+        } else {
+            DifferentHttpError.Error404(write);
         }
     }
 
