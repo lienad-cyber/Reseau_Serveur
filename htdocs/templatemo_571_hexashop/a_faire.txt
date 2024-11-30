@@ -1,0 +1,14 @@
+
+- Recherche multi criteres -nom, min_price, max_price, note_min
+  utiliser products.php pour l'afficher des resultats
+
+- note etoiles php
+
+- Login backoffice (Insertion, login, mot de passe direct dans la base)
+
+To do list a ecrire :
+    nompage/nom fichier
+        affichage
+        fonction/metier
+        base
+        integration code

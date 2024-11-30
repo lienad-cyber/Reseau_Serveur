@@ -1,0 +1,103 @@
+.fa-star-half-o {
+    position: relative;
+    display: inline-block;
+    width: 1em;
+    /* Ajuste la largeur selon la taille de l'icône */
+    height: 1em;
+    /* Ajuste la hauteur selon la taille de l'icône */
+}
+
+.fa-star-half-o::before {
+    content: '\f005';
+    /* Code unicode pour l'étoile pleine */
+    font-family: 'FontAwesome';
+    /* Assurez-vous d'avoir FontAwesome inclus */
+    color: #FFD700;
+    /* Couleur de l'étoile (doré pour pleine) */
+    position: absolute;
+    left: 0;
+    top: 0;
+    clip-path: inset(0 50% 0 0);
+    /* Coupe la moitié droite */
+}
+
+.fa-star-half-o::after {
+    content: '\f005';
+    /* Code unicode pour l'étoile pleine */
+    font-family: 'FontAwesome';
+    color: #E0E0E0;
+    /* Couleur pour une étoile vide */
+    position: absolute;
+    left: 0;
+    top: 0;
+    clip-path: inset(0 0 0 50%);
+    /* Coupe la moitié gauche */
+}
+
+/* Style de base pour le formulaire */
+form {
+    max-width: 1200px;
+    margin: 200px auto;
+    /* Centrer le formulaire */
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    font-family: 'Poppins', sans-serif;
+}
+
+/* Style pour les étiquettes */
+form label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: #333;
+    font-size: 14px;
+}
+
+/* Style pour les champs de saisie */
+form input {
+    width: calc(100% - 20px);
+    padding: 10px;
+    margin-bottom: 20px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+    color: #555;
+    box-sizing: border-box;
+    transition: border-color 0.3s;
+}
+
+/* Focus pour les champs */
+form input:focus {
+    outline: none;
+    border-color: #ff6b6b;
+}
+
+/* Style pour le bouton */
+form button {
+    width: 100%;
+    padding: 10px 20px;
+    background-color: #2a1f1f;
+    color: #fff;
+    font-size: 16px;
+    font-weight: bold;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+form button:hover {
+    background-color: #e65c5c;
+}
+
+form input:hover,
+form button:hover {
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.search-button {
+    background-color: #2a1f1f;
+    color: white;
+}

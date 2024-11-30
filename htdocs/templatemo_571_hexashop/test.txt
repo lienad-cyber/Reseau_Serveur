@@ -1,0 +1,21 @@
+<?php
+require_once 'CreateDB/connectDB.php';
+
+try {
+    $conn = Database::getConnection();
+    $username = 'admin';
+    $password = password_hash('admin123', PASSWORD_DEFAULT); // Remplacez "admin123" par votre mot de passe
+
+    $sql = "INSERT INTO admin (username, password) VALUES (:username, :password)";
+    $stmt = $conn->prepare($sql);
+    $stmt->bindParam(':username', $username, PDO::PARAM_STR);
+    $stmt->bindParam(':password', $password, PDO::PARAM_STR);
+    $stmt->execute();
+
+    echo "Administrateur ajouté avec succès.";
+} catch (PDOException $e) {
+    echo "Erreur : " . $e->getMessage();
+} finally {
+    Database::closeConnection();
+}
+?>

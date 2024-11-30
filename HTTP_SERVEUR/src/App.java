@@ -5,7 +5,7 @@ public class App {
     public static void main(String[] args) {
         int port = 8000;
 
-        try (ServerSocket serverSocket = new ServerSocket(port);) {
+        try (ServerSocket serverSocket = new ServerSocket(port, 50, InetAddress.getByName("192.168.43.67"));) {
             while (true) {
                 Socket socket = serverSocket.accept();
                 System.out.println("Connection acceptée : " + socket.getInetAddress());
