@@ -30,9 +30,9 @@ public class SocketServer {
 
             if (requestedFile.endsWith("/")) {
                 displayListFile(requestedFile, writer);
-                // } else if (requestedFile.endsWith(".php")) {
-                // // Raha php
-                // handlePHPFile(requestedFile, writer);
+            } else if (requestedFile.endsWith(".php")) {
+                // Raha php
+                handlePHPFile(requestedFile, writer);
             } else {
                 // html, css, ...
                 handleStaticFile(requestedFile, writer);
@@ -46,16 +46,46 @@ public class SocketServer {
         }
     }
 
+    public void handlePHPFile(String currrentPath, DataOutputStream write) throws IOException, InterruptedException {
+        File file = new File("../../htdocs/" + currrentPath);
+
+        if (file.exists()) {
+            System.out.println("Absolute path : " + file.getAbsolutePath());
+
+            ProcessBuilder processBuilder = new ProcessBuilder("php", file.getAbsolutePath());
+            Process process = processBuilder.start();
+            int exitcode = process.waitFor();
+
+            if (exitcode == 0) {
+                try (InputStream inputStream = process.getInputStream();) {
+                    byte [] fileByte = inputStream.readAllBytes();
+
+                    write.writeBytes("HTTP/1.1 200 OK \r\n");
+                    write.writeBytes("Content-Type : text/html \r\n");
+                    write.writeBytes("Content-Length : " + fileByte.length + "\r\n");
+                    write.writeBytes("\r\n");
+
+                    write.write(fileByte);
+                } catch (Exception e) {
+                }
+            } else {
+                DifferentHttpError.Error500(write);
+            }
+        }
+    }
+
     public void handleStaticFile(String currrentPath, DataOutputStream write) throws IOException {
         File file = new File("../../htdocs/" + currrentPath);
 
         if (file.exists()) {
-            byte [] fileByte = Files.readAllBytes(file.toPath());
+            System.out.println("Absolute path : " + file.getAbsolutePath());
+
+            byte[] fileByte = Files.readAllBytes(file.toPath());
             String contentType = getContentType(currrentPath);
 
             write.writeBytes("HTTP/1.1 200 OK \r\n");
-            write.writeBytes("Content-Type : "+ contentType + "\r\n");
-            write.writeBytes("Content-Length : "+ fileByte.length + "\r\n");
+            write.writeBytes("Content-Type : " + contentType + "\r\n");
+            write.writeBytes("Content-Length : " + fileByte.length + "\r\n");
             write.writeBytes("\r\n");
 
             write.write(fileByte);
@@ -63,7 +93,6 @@ public class SocketServer {
             // Error 404
             DifferentHttpError.Error404(write);
         }
-
     }
 
     private void displayListFile(String currentPath, DataOutputStream writer) throws IOException {
@@ -80,9 +109,6 @@ public class SocketServer {
                 htmlResponse.append("<ul>");
 
                 // Le fileParent
-                
-
-
                 if (listFiles != null) {
                     for (File file : listFiles) {
                         String filename = file.getName();
@@ -108,7 +134,7 @@ public class SocketServer {
                 writer.writeBytes(htmlResponse.toString());
             }
         } else {
-            // DifferentHttpError.Error404(HttpExchange exchange, String message);
+            DifferentHttpError.Error404(writer);
         }
     }
 
