@@ -111,28 +111,30 @@ public class FileHandler implements HttpHandler {
         // Le localhost tokony miova anle ip anle serveur apres
         String baseUrl = "http:/" + HostIpAddress + ":8000";
 
-        System.out.println("HostIpAddress : " + HostIpAddress);
-
         stringBuilder.append("<html><body>");
         stringBuilder.append("<ul>");
 
         if (!path.equals("/")) {
             String parentPath = path.substring(0, path.lastIndexOf("/"));
-            stringBuilder.append("<li><a href='").append(baseUrl).append(parentPath).append("'>..</a></li>");
+            stringBuilder.append("<li><a href='").append(parentPath).append("'>..</a></li>");
         }
+
+        System.out.println("base url : "  + baseUrl +" HostIpAddress : " + HostIpAddress + " parentpath : " + path);
 
         for (File file : listFilesInDirectory) {
 
             if (file.isDirectory()) {
-                stringBuilder.append("<li><a href='").append(baseUrl).append(path).append(file.getName()).append("'>")
+                stringBuilder.append("<li><a href='").append(path).append(file.getName()).append("'>")
                         .append(file.getName()).append("</a></li>");
             }
 
             else {
-                stringBuilder.append("<li><a href='").append(baseUrl).append(path).append("/").append(file.getName())
+                stringBuilder.append("<li><a href='").append(path).append("/").append(file.getName())
                         .append("'>")
                         .append(file.getName()).append("</a></li>");
             }
+
+            System.out.println("base url : "  + baseUrl + " path : " + path + " file get name : " + file.getName());
         }
         stringBuilder.append("</ul>");
         stringBuilder.append("</body></html>");
