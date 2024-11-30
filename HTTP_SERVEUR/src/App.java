@@ -14,6 +14,7 @@ public class App {
                     try {
                         new SocketServer().MyFileHandler(socket);
                     } catch (IOException ex) {
+                    } catch (InterruptedException ex) {
                     }
                 }).start();
             }

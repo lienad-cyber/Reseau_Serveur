@@ -3,54 +3,45 @@ import java.net.*;
 import java.nio.file.Files;
 
 public class SocketServer {
-    public void MyFileHandler(Socket ClientSocket) throws IOException {
-        ServerSocket serverSocket = null;
-        DataOutputStream writer = null;
-        BufferedReader bufferedReader = null;
-        InputStreamReader DataInputStream = null;
+    public void MyFileHandler(Socket clientSocket) throws IOException, InterruptedException {
 
-        try {
-            DataInputStream = new InputStreamReader(ClientSocket.getInputStream());
-            bufferedReader = new BufferedReader(DataInputStream);
-            writer = new DataOutputStream(ClientSocket.getOutputStream());
-
-            // Le requete
-            String requestString = bufferedReader.readLine();
-
-            if (requestString == null) {
+        try (
+            BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+            DataOutputStream writer = new DataOutputStream(clientSocket.getOutputStream())
+        ) {
+            // Lire la requête du client
+            String requestLine = reader.readLine();
+            if (requestLine == null || requestLine.isEmpty()) {
                 return;
             }
 
-            String[] requestParts = requestString.split(" ");
-            // Le partie ao arinan'ny localhost:8000
-            String requestedFile = requestParts[1];
+            System.out.println("Requête reçue : " + requestLine);
 
-            System.out.println("La requete : " + requestString);
-            System.out.println("Fichier Courante : " + requestedFile);
+            // Analyse de la requête
+            String[] requestParts = requestLine.split(" ");
 
-            if (requestedFile.endsWith("/")) {
-                displayListFile(requestedFile, writer);
-            } else if (requestedFile.endsWith(".php")) {
-                // Raha php
-                handlePHPFile(requestedFile, writer);
+            String requestedPath = requestParts[1];
+            System.out.println("Fichier demandé : " + requestedPath);
+
+            // Gestion de la requête selon le type de fichier
+            if (requestedPath.endsWith("/")) {
+                displayListFile(requestedPath, writer);
+            } else if (requestedPath.endsWith(".php")) {
+                handlePHPFile(requestedPath, writer);
             } else {
-                // html, css, ...
-                handleStaticFile(requestedFile, writer);
+                handleStaticFile(requestedPath, writer);
             }
 
-        } catch (Exception e) {
-        } finally {
-            DataInputStream.close();
-            bufferedReader.close();
-            writer.close();
+        } catch (IOException e) {
+            System.err.println("Erreur de communication : " + e.getMessage());
         }
     }
 
+
     public void handlePHPFile(String currrentPath, DataOutputStream write) throws IOException, InterruptedException {
-        File file = new File("../../htdocs/" + currrentPath);
+        File file = new File("../../htdocs/" + currrentPath).getCanonicalFile();  // Path makany amle fichier
 
         if (file.exists()) {
-            System.out.println("Absolute path : " + file.getAbsolutePath());
 
             ProcessBuilder processBuilder = new ProcessBuilder("php", file.getAbsolutePath());
             Process process = processBuilder.start();
@@ -66,6 +57,8 @@ public class SocketServer {
                     write.writeBytes("\r\n");
 
                     write.write(fileByte);
+
+                    sendResponse(write, "200 OK", "text/html", fileByte);
                 } catch (Exception e) {
                 }
             } else {
@@ -77,20 +70,14 @@ public class SocketServer {
     }
 
     public void handleStaticFile(String currrentPath, DataOutputStream write) throws IOException {
-        File file = new File("../../htdocs/" + currrentPath);
+        File file = new File("../../htdocs/" + currrentPath).getCanonicalFile(); // Path makany amle fichier
 
         if (file.exists()) {
-            System.out.println("Absolute path : " + file.getAbsolutePath());
 
             byte[] fileByte = Files.readAllBytes(file.toPath());
             String contentType = getContentType(currrentPath);
 
-            write.writeBytes("HTTP/1.1 200 OK \r\n");
-            write.writeBytes("Content-Type : " + contentType + "\r\n");
-            write.writeBytes("Content-Length : " + fileByte.length + "\r\n");
-            write.writeBytes("\r\n");
-
-            write.write(fileByte);
+            sendResponse(write, "200 OK", contentType, fileByte);
         } else {
             // Error 404
             DifferentHttpError.Error404(write);
@@ -100,7 +87,7 @@ public class SocketServer {
     private void displayListFile(String currentPath, DataOutputStream writer) throws IOException {
         System.out.println("");
 
-        File currentFile = new File("../../htdocs/" + currentPath);
+        File currentFile = new File("../../htdocs/" + currentPath).getCanonicalFile(); // Path makany amle fichier
 
         if (currentFile.exists()) {
             if (currentFile.isDirectory()) {
@@ -125,15 +112,7 @@ public class SocketServer {
                     }
                 }
 
-                htmlResponse.append("</ul>");
-                htmlResponse.append("</body></html>");
-
-                writer.writeBytes("HTTP/1.1 200 OK\r\n");
-                writer.writeBytes("Content-Type: text/html\r\n");
-                writer.writeBytes("Content-Length: " + htmlResponse.length() + "\r\n");
-                writer.writeBytes("\r\n");
-
-                writer.writeBytes(htmlResponse.toString());
+                sendResponse(writer, "200 OK", "text/html", htmlResponse.toString().getBytes());
             }
         } else {
             DifferentHttpError.Error404(writer);
@@ -151,6 +130,18 @@ public class SocketServer {
             case "jpg", "jpeg" -> "image/jpeg";
             default -> "application/octet-stream";
         };
+    }
+
+    private void sendResponse(DataOutputStream writer, String status, String contentType, byte[] content) {
+        try {
+            writer.writeBytes("HTTP/1.1 " + status + "\r\n");
+            writer.writeBytes("Content-Type: " + contentType + "\r\n");
+            writer.writeBytes("Content-Length: " + content.length + "\r\n");
+            writer.writeBytes("\r\n");
+            writer.write(content);
+        } catch (IOException e) {
+            System.err.println("Erreur lors de l'envoi de la réponse : " + e.getMessage());
+        }
     }
 
 }
