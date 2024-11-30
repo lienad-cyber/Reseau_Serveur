@@ -153,15 +153,12 @@ public class SocketServer {
         // Lecture de l'en-tête HTTP (Headers)
         String line;
         int contentLength = 0;
-        String contentType = new String();
 
         while (!(line = reader.readLine()).isEmpty()) {
             System.out.println("Header : " + line);
 
             if (line.startsWith("Content-Length:")) {
                 contentLength = Integer.parseInt(line.split(":")[1].trim());
-            } else if (line.startsWith("Content-Type:")) {
-                contentType = line.split(":")[1].trim();
             }
         }
 
@@ -173,6 +170,60 @@ public class SocketServer {
         System.out.println("Request body : " + requestBody);
         handlePHPFileWithPostData(currentPath, requestBody, writer);
     }
+
+    private void handlePHPFileWithPostData(String currentPath, String requestBody, DataOutputStream writer)
+            throws IOException, InterruptedException {
+        File file = new File("../../htdocs/" + currentPath).getCanonicalFile();
+
+        if (file.exists()) {
+            ProcessBuilder processBuilder = new ProcessBuilder("php", file.getAbsolutePath());
+
+            // Définir les variables d'environnement nécessaires
+            processBuilder.environment().put("REQUEST_METHOD", "POST");
+            processBuilder.environment().put("CONTENT_TYPE", "application/x-www-form-urlencoded");
+            processBuilder.environment().put("CONTENT_LENGTH", String.valueOf(requestBody.length()));
+
+            Process process = processBuilder.start();
+
+            // Envoyer les données POST dans le flux d'entrée
+            try (OutputStream os = process.getOutputStream()) {
+                os.write(requestBody.getBytes(StandardCharsets.UTF_8));
+                os.flush();
+            }
+
+            int exitCode = process.waitFor();
+
+            if (exitCode == 0) {
+                try (InputStream inputStream = process.getInputStream()) {
+                    byte[] fileBytes = inputStream.readAllBytes();
+                    sendResponse(writer, "200 OK", "text/html", fileBytes);
+                }
+            } else {
+                // Lire et afficher les erreurs éventuelles
+                try (InputStream errorStream = process.getErrorStream()) {
+                    String errorOutput = new String(errorStream.readAllBytes(), StandardCharsets.UTF_8);
+                    System.err.println("Erreur PHP : " + errorOutput);
+                }
+                DifferentHttpError.Error500(writer);
+            }
+        } else {
+            DifferentHttpError.Error404(writer);
+        }
+    }
+
+    private void sendResponse(DataOutputStream writer, String status, String contentType, byte[] content) {
+        try {
+            writer.writeBytes("HTTP/1.1 " + status + "\r\n");
+            writer.writeBytes("Content-Type: " + contentType + "\r\n");
+            writer.writeBytes("Content-Length: " + content.length + "\r\n");
+            writer.writeBytes("\r\n");
+            writer.write(content);
+        } catch (IOException e) {
+            System.err.println("Erreur lors de l'envoi de la réponse : " + e.getMessage());
+        }
+    }
+}
+
 
     // private void handlePHPFileWithPostData(String currentPath, String
     // requestBody, int contentLength,
@@ -231,56 +282,3 @@ public class SocketServer {
     // DifferentHttpError.Error404(writer);
     // }
     // }
-
-    private void handlePHPFileWithPostData(String currentPath, String requestBody, DataOutputStream writer)
-            throws IOException, InterruptedException {
-        File file = new File("../../htdocs/" + currentPath).getCanonicalFile();
-
-        if (file.exists()) {
-            ProcessBuilder processBuilder = new ProcessBuilder("php", file.getAbsolutePath());
-
-            // Définir les variables d'environnement nécessaires
-            processBuilder.environment().put("REQUEST_METHOD", "POST");
-            processBuilder.environment().put("CONTENT_TYPE", "application/x-www-form-urlencoded");
-            processBuilder.environment().put("CONTENT_LENGTH", String.valueOf(requestBody.length()));
-
-            Process process = processBuilder.start();
-
-            // Envoyer les données POST dans le flux d'entrée
-            try (OutputStream os = process.getOutputStream()) {
-                os.write(requestBody.getBytes(StandardCharsets.UTF_8));
-                os.flush();
-            }
-
-            int exitCode = process.waitFor();
-
-            if (exitCode == 0) {
-                try (InputStream inputStream = process.getInputStream()) {
-                    byte[] fileBytes = inputStream.readAllBytes();
-                    sendResponse(writer, "200 OK", "text/html", fileBytes);
-                }
-            } else {
-                // Lire et afficher les erreurs éventuelles
-                try (InputStream errorStream = process.getErrorStream()) {
-                    String errorOutput = new String(errorStream.readAllBytes(), StandardCharsets.UTF_8);
-                    System.err.println("Erreur PHP : " + errorOutput);
-                }
-                DifferentHttpError.Error500(writer);
-            }
-        } else {
-            DifferentHttpError.Error404(writer);
-        }
-    }
-
-    private void sendResponse(DataOutputStream writer, String status, String contentType, byte[] content) {
-        try {
-            writer.writeBytes("HTTP/1.1 " + status + "\r\n");
-            writer.writeBytes("Content-Type: " + contentType + "\r\n");
-            writer.writeBytes("Content-Length: " + content.length + "\r\n");
-            writer.writeBytes("\r\n");
-            writer.write(content);
-        } catch (IOException e) {
-            System.err.println("Erreur lors de l'envoi de la réponse : " + e.getMessage());
-        }
-    }
-}
