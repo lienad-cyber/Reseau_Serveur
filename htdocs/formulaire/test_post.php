@@ -1,10 +1,8 @@
 <?php
-if (isset($_SERVER['REQUEST_METHOD'])) {
-    echo "Méthode de requête : " . $_SERVER['REQUEST_METHOD'] . "\n";
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    echo "Données reçues via POST :<br>";
+    print_r($_POST);
 } else {
-    echo "REQUEST_METHOD n'est pas défini.\n";
+    echo "Méthode non POST.";
 }
-
-$postData = file_get_contents('php://input');
-echo "Données POST : " . $_POST["username"] . "\n";
 ?>
